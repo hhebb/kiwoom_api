@@ -7,6 +7,7 @@ def comm_connect(ocx):
     '''
     kiwoom api 로그인
     '''
+    
     ocx.dynamicCall("CommConnect()")
 
 
@@ -19,6 +20,7 @@ def set_input_value(ocx, fid, val):
     tr 요청 값 지정
     comm rt data 전에 호출해야함
     '''
+
     ocx.dynamicCall('SetInputValue(QString, int)', fid, val)
 
 
@@ -27,6 +29,7 @@ def comm_rq_data(ocx, rqname, trcode, next, screen):
     tr 요청 수행
     set input value 를 먼저 호출해야함
     '''
+
     ocx.dynamicCall('CommRqData(QString, QString, int, QString)', rqname, trcode, next, screen)
 
 
@@ -35,7 +38,19 @@ def get_comm_data(ocx, trcode, rqname, index, item):
     tr 응답 받아오는 함수
     콜백 핸들러 안에서 호출
     '''
+
     data = ocx.dynamicCall("GetCommData(QString, QString, int, QString)", trcode, rqname, index, item)
+    return data.strip()
+
+
+def get_comm_data_ex(ocx, trcode, rqname):
+    '''
+    tr 응답 받아오는 함수
+    콜백 핸들러 안에서 호출
+    전체 데이터
+    '''
+
+    data = ocx.dynamicCall("GetCommDataEx(QString, QString)", trcode, rqname)
     return data.strip()
 
 
