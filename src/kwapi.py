@@ -18,7 +18,7 @@ tr api
 def set_input_value(ocx, fid, val):
     '''
     tr 요청 값 지정
-    comm rt data 전에 호출해야함
+    comm rt data 전에 호출해야함 
     '''
 
     ocx.dynamicCall('SetInputValue(QString, int)', fid, val)
