@@ -32,8 +32,10 @@ class Collector:
         거래소에서 조회한 데이터를 받아 로컬에 저장하는 단계
         '''
 
-        data = self.exchange.get_data() # generator
-        self.save(data)
+        data_generator = self.exchange.get_data() # generator
+
+        for data in data_generator:
+            self.__save(data)
 
     def execute_update(self):
         pass
@@ -41,7 +43,7 @@ class Collector:
     def execute_flush(self):
         pass
 
-    def save(self, data):
+    def __save(self, data):
         '''
         거래소에서 받아온 데이터를 직접 저장하는 메서드
         일관된 형식으로 받아서 일관된 형태로 저장하기 때문에 거래소 모듈에서 forming 해야함

@@ -3,6 +3,7 @@ from PyQt5.QAxContainer import *
 import pythoncom
 import queue
 import time
+import pandas as pd
 
 class KiwoomExchange(Exchange):
     def __init__(self):
@@ -12,22 +13,29 @@ class KiwoomExchange(Exchange):
         self.ocx.OnReceiveTrData.connect(self.OnReceiveTrData)
         self.login = False
         self.tr = False
-        self.tr_queue = queue.Queue()
-        self.tr_data = dict()
+        self.tr_queue = queue.Queue() # buffer
+        # self.tr_data = dict()
 
     def connect(self):
-        self.CommConnect
+        self.CommConnect()
     
 
     def set_preference(self, preference):
-        self.prefernce = preference
+        self.preference = preference
 
     def get_data(self):
-        # decode self.prefernce
-        # self.prefernce.items
-        # self.prefernce.data_type
-        # self.prefernce.range
-        # self.prefernce.period
+        # 마지막 처리 필요
+
+        # decode self.preference
+        # self.preference.items
+        # self.preference.data_type
+        # self.preference.range
+        # self.preference.period
+        self.start_date = self.preference.range[0]
+        self.end_date = self.preference.range[1]
+        self.cur_date = self.start_date
+        
+        buffer = list()
 
         for code in list(5):
             while True:
@@ -35,18 +43,27 @@ class KiwoomExchange(Exchange):
                 self.SetInputValue("기준일자", "20050612")
                 self.SetInputValue("수정주가구분", "0")
                 self.CommRqData("ex", "opt10081", next, "0101")
-                tr_data, remain = self.tr_queue.get()
+                # tr_data, remain = self.tr_queue.get()
                 time.sleep(1)
 
+                # self.tr_queue.put(tr_data)
+                while self.tr_queue[0].date != self.cur_date:
+                    price, remain = self.tr_queue.get()
+                    buffer.append(price)
+                
+                if len(buffer) > 0:
+                    pd.DataFrame() # to dataframe
+                    yield buffer
+                    buffer = list()
+                    self.cur_date = self.tr_queue[0].date
+
+                # no more data, no more loop
                 if remain == '2':
                     next = 2
                     self.tr = True
                 else:
                     break
                 
-                if True: # collector 가 쌓을 수 있는 양이 되었을 때 yield
-                    yield tr_data
-            
 
     #####################################################
     # API dependent
@@ -59,6 +76,19 @@ class KiwoomExchange(Exchange):
     def OnEventConnect(self, code):
         self.login = True
         print("login is done", code)
+
+    def OnReceiveTrData(self, screen, rqname, trcode, record, next):
+        # rqname 에 ex 붙여서 통째로 받는 방법도 만들어놓기
+        print(screen, rqname, trcode, record, next)
+        self.tr = True
+
+        name = self.GetCommData(trcode, rqname, 0, "종목명")
+        per = self.GetCommData(trcode, rqname, 0, "PER")
+        pbr = self.GetCommData(trcode, rqname, 0, "PBR")
+
+        data = (name, per, pbr)
+        self.tr_data[trcode] = data
+        self.tr_queue.put((data, next))
 
     def GetCodeListByMarket(self, market):
         ret = self.ocx.dynamicCall("GetCodeListByMarket(QString)", market)
